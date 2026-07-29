@@ -1,16 +1,18 @@
 function EmbedAllVideos() {
     var ws = ActiveSheet;
-    var folderPath = "C:\\Users\\PCXPC\\Documents\\REPORTS\\MONTHLY\\AS COLLECTIONS\\VIDEOS\\ENCHEN\\";
+    var folderPath = "";
     
-    // Find the last row (with data) from the source column
+      // Find the last row (with data) from the source column
     var lastRow = ws.Cells(ws.Rows.Count, 1).End(-4162).Row;
     
     var embeddedCount = 0;
     var notFoundCount = 0;
     var failedCount = 0;
     
+    var margin = 6;  // 6px margin on each side
+    
     // Loop through each row
-    for (var i = 1; i <= lastRow; i++) {
+    for (var i = 1; i <= lastRow; i++) {    
         var orderID = ws.Range("A" + i).Value2;
         
         if (orderID && orderID.toString().trim() !== "") {
@@ -19,7 +21,6 @@ function EmbedAllVideos() {
             
             // Attempt Video embedding
             try {
-                // Find the target cell, aligned with the row of the Order ID
                 var targetCell = ws.Range("B" + i);
                 targetCell.Select();
                 
@@ -32,28 +33,29 @@ function EmbedAllVideos() {
                     }
                 }
                 
-                // Use WPS's AddOLEObject method 
+                // Use cell-based sizing with margin
                 var oleObj = ActiveSheet.Shapes.AddOLEObject(
-                    "",                          // ClassType (empty for file)
-                    videoPath,                   // Filename
-                    false,                       // Link (false = embed)
-                    undefined,                   // (optional)
-                    "%SystemRoot%\\system32\\wmploc.dll",  // Icon file
-                    -730,                        // Icon index
-                    orderID + ".mp4",            // Display name
-                    targetCell.Left + 2,         // Left
-                    targetCell.Top + 2,          // Top
-                    targetCell.Width - 4,        // Width
-                    targetCell.Height - 4        // Height
+                    "",
+                    videoPath,
+                    false,
+                    undefined,
+                    "%SystemRoot%\\system32\\wmploc.dll",
+                    -730,
+                    orderID + ".mp4",
+                    targetCell.Left + margin,           // Left with margin
+                    targetCell.Top + margin,            // Top with margin
+                    targetCell.Width - (margin * 2),    // Width minus margins
+                    targetCell.Height - (margin * 2)    // Height minus margins
                 );
                 
                 if (oleObj) {
+                    oleObj.Placement = 1;
                     ws.Range("C" + i).Value2 = "✓ Embedded";
-                    ws.Range("C" + i).Font.Color = 65280; // Green
+                    ws.Range("C" + i).Font.Color = 65280;
                     embeddedCount++;
                 } else {
                     ws.Range("C" + i).Value2 = "✗ Failed";
-                    ws.Range("C" + i).Font.Color = 255; // Red
+                    ws.Range("C" + i).Font.Color = 255;
                     failedCount++;
                 }
             } catch (err) {
@@ -64,13 +66,10 @@ function EmbedAllVideos() {
         }
     }
     
-    // Auto-fit columns
     ws.Columns("A:C").AutoFit();
-    
-    // Show summary
     alert("Video Embedding Complete!\n\n" +
-          "Embedded: " + embeddedCount + " videos\n" +
-          "Not found: " + notFoundCount + " videos\n" +
-          "Failed: " + failedCount + " videos\n\n" +
+          "✓ Embedded: " + embeddedCount + " videos\n" +
+          "✗ Not found: " + notFoundCount + " videos\n" +
+          "⚠ Failed: " + failedCount + " videos\n\n" +
           "Check column C for status.");
 }
