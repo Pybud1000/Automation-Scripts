@@ -161,6 +161,9 @@ def standardize_worksheet(source_ws, target_ws, styles):
     max_row = source_ws.max_row
     max_col = source_ws.max_column
     
+    # Add one extra column for Logistics Remarks
+    new_max_col = max_col + 1
+    
     # First pass: copy all data and formulas
     for row_idx in range(1, max_row + 1):
         for col_idx in range(1, max_col + 1):
@@ -173,6 +176,22 @@ def standardize_worksheet(source_ws, target_ws, styles):
             # Copy number format if it exists (for formulas)
             if source_cell.number_format and not source_cell.number_format == 'General':
                 target_cell.number_format = source_cell.number_format
+    
+    # Add "Logistics Remarks" header in the new column
+    header_cell = target_ws.cell(row=1, column=new_max_col)
+    header_cell.value = "Logistics Remarks"
+    header_cell.font = styles['header']['font']
+    header_cell.fill = styles['header']['fill']
+    header_cell.alignment = styles['header']['alignment']
+    header_cell.border = styles['header']['border']
+    
+    # Leave the rest of the new column empty but formatted
+    for row_idx in range(2, max_row + 1):
+        target_cell = target_ws.cell(row=row_idx, column=new_max_col)
+        target_cell.font = styles['data']['font']
+        target_cell.alignment = styles['data']['alignment']
+        target_cell.border = styles['data']['border']
+        # Leave value empty (None)
     
     # Detect column types and apply standard formatting
     for col_idx in range(1, max_col + 1):
@@ -223,6 +242,10 @@ def standardize_worksheet(source_ws, target_ws, styles):
                     target_cell.alignment = styles['data']['alignment']
                     target_cell.border = styles['data']['border']
     
+    # Set column width for the new Logistics Remarks column
+    log_col_letter = get_column_letter(new_max_col)
+    target_ws.column_dimensions[log_col_letter].width = 25
+    
     # Set row heights
     target_ws.row_dimensions[1].height = 25  # Header row
     for row_idx in range(2, max_row + 1):
@@ -238,7 +261,8 @@ def standardize_worksheet(source_ws, target_ws, styles):
     
     print(f"  {Colors.GREEN}✓{Colors.END} Standardized {Colors.BOLD}{target_ws.title}{Colors.END} "
           f"({Colors.YELLOW}{max_row:,}{Colors.END} rows × "
-          f"{Colors.YELLOW}{max_col:,}{Colors.END} columns)")
+          f"{Colors.YELLOW}{new_max_col:,}{Colors.END} columns) "
+          f"[{Colors.CYAN}+ Logistics Remarks column added{Colors.END}]")
 
 def append_source_files(source_dir, output_file):
     # Get all XLSX files from source directory
@@ -286,7 +310,7 @@ def append_source_files(source_dir, output_file):
             
             # Update statistics
             total_rows += source_ws.max_row
-            total_cols = max(total_cols, source_ws.max_column)
+            total_cols = max(total_cols, source_ws.max_column + 1)  # +1 for new column
             
             source_wb.close()
             
@@ -310,7 +334,8 @@ def append_source_files(source_dir, output_file):
         print(f"{Colors.BOLD}  📈 Total Rows   : {Colors.YELLOW}{total_rows:,}{Colors.END}")
         print(f"{Colors.BOLD}  📊 Total Cols   : {Colors.YELLOW}{total_cols:,}{Colors.END}")
         print(f"{Colors.GREEN}{'='*70}{Colors.END}")
-        print(f"{Colors.BOLD}{Colors.GREEN}✨ Formatting standardized across all sheets!{Colors.END}\n")
+        print(f"{Colors.BOLD}{Colors.GREEN}✨ Formatting standardized across all sheets!{Colors.END}")
+        print(f"{Colors.BOLD}{Colors.GREEN}📝 Added 'Logistics Remarks' column to each sheet!{Colors.END}\n")
         
     except Exception as e:
         print(f"{Colors.RED}❌ Error saving file: {str(e)}{Colors.END}")
